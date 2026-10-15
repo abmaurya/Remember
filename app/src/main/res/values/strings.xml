@@ -869,6 +869,9 @@
     <string name="settings_restore_notifications_desc">Re-posts dismissed reminder notifications until marked done.</string>
     <string name="settings_critical_reminder_type_title">Critical reminder type</string>
     <string name="settings_critical_reminder_type_desc">Choose alarm ring duration or single chime</string>
+    <string name="settings_critical_chime_repeat_title">Chime repeat interval</string>
+    <string name="settings_critical_chime_repeat_desc">Time between Critical chimes</string>
+    <string name="settings_critical_chime_repeat_minutes">%1$d min</string>
     <!-- Dropdown menu items: the full option names. -->
     <string name="settings_critical_reminder_type_chime">One chime (High\'s tone)</string>
     <string name="settings_critical_reminder_type_30_seconds">30-second alarm</string>

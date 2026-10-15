@@ -42,6 +42,7 @@ import androidx.core.content.ContextCompat
 import androidx.core.net.toUri
 import dev.bikram.remember.R
 import dev.bikram.remember.data.CriticalRingDuration
+import dev.bikram.remember.data.CriticalChimeRepeatInterval
 import dev.bikram.remember.data.QuickCapturePrefs
 import dev.bikram.remember.data.QuickCaptureState
 import dev.bikram.remember.data.ReminderPreferencesState
@@ -294,6 +295,14 @@ internal fun RemindersSection(
                 },
             )
         }
+        if (reminderState.criticalRingDuration == CriticalRingDuration.NO_RING) {
+            GroupedListItem(position = GroupPosition.MIDDLE) {
+                CriticalChimeRepeatIntervalRow(
+                    interval = reminderState.criticalChimeRepeatInterval,
+                    onSelect = { selected -> scope.launch { reminderPrefs.setCriticalChimeRepeatInterval(selected) } },
+                )
+            }
+        }
         GroupedListItem(
             position = GroupPosition.LAST,
             modifier =
@@ -313,6 +322,34 @@ internal fun RemindersSection(
                     scope.launch { reminderPrefs.setSnoozeType(selected) }
                 },
             )
+        }
+    }
+}
+
+@Composable
+private fun CriticalChimeRepeatIntervalRow(
+    interval: CriticalChimeRepeatInterval,
+    onSelect: (CriticalChimeRepeatInterval) -> Unit,
+) {
+    var expanded by rememberSaveable { mutableStateOf(false) }
+    Row(
+        modifier = Modifier.fillMaxWidth().appClickable { expanded = true }.padding(horizontal = 16.dp, vertical = 10.dp),
+        verticalAlignment = Alignment.CenterVertically,
+    ) {
+        RememberMaterialRoundedSymbol(name = "notifications", tint = MaterialTheme.colorScheme.onSurfaceVariant, weight = FontWeight.Medium)
+        Spacer(Modifier.width(16.dp))
+        Column(Modifier.weight(1f), verticalArrangement = Arrangement.spacedBy(2.dp)) {
+            Text(stringResource(R.string.settings_critical_chime_repeat_title), style = MaterialTheme.typography.bodyLarge)
+            Text(stringResource(R.string.settings_critical_chime_repeat_desc), style = MaterialTheme.typography.bodySmall, color = MaterialTheme.colorScheme.onSurfaceVariant)
+        }
+        Spacer(Modifier.width(8.dp))
+        RememberOutlinedButton(onClick = { expanded = true }) {
+            Text(stringResource(R.string.settings_critical_chime_repeat_minutes, interval.minutes), maxLines = 1)
+            DropdownMenu(expanded = expanded, onDismissRequest = { expanded = false }, containerColor = MaterialTheme.colorScheme.surfaceContainerHighest) {
+                CriticalChimeRepeatInterval.entries.forEach { option ->
+                    RememberDropdownMenuItem(text = { Text(stringResource(R.string.settings_critical_chime_repeat_minutes, option.minutes)) }, onClick = { onSelect(option); expanded = false })
+                }
+            }
         }
     }
 }

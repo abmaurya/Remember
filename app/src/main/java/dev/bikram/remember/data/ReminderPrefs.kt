@@ -15,6 +15,10 @@ enum class SnoozeType {
     ABSOLUTE,
 }
 
+enum class CriticalChimeRepeatInterval(val minutes: Int) {
+    FIVE(5), TEN(10), FIFTEEN(15), THIRTY(30), SIXTY(60),
+}
+
 /**
  * How long a Critical reminder rings each time it alerts. Stored by name. [NO_RING] skips the
  * alarm: each alert plays High's notification tone once instead, and still repeats.
@@ -39,6 +43,7 @@ data class ReminderPreferencesState(
     val reminderSummaryNotificationEnabled: Boolean = false,
     val snoozeType: SnoozeType = SnoozeType.RELATIVE,
     val criticalRingDuration: CriticalRingDuration = CriticalRingDuration.ONE_MINUTE,
+    val criticalChimeRepeatInterval: CriticalChimeRepeatInterval = CriticalChimeRepeatInterval.FIFTEEN,
 )
 
 private val Context.reminderDataStore by preferencesDataStore(name = "reminder_prefs")
@@ -51,6 +56,7 @@ class ReminderPrefs(
         val SUMMARY_NOTIFICATION = booleanPreferencesKey("reminder_summary_notification")
         val SNOOZE_TYPE = stringPreferencesKey("snooze_type")
         val CRITICAL_RING_DURATION = stringPreferencesKey("critical_ring_duration")
+        val CRITICAL_CHIME_REPEAT_INTERVAL = stringPreferencesKey("critical_chime_repeat_interval")
     }
 
     val state: Flow<ReminderPreferencesState> =
@@ -66,6 +72,9 @@ class ReminderPrefs(
                     prefs[Keys.CRITICAL_RING_DURATION]?.let { raw ->
                         runCatching { CriticalRingDuration.valueOf(raw) }.getOrNull()
                     } ?: CriticalRingDuration.ONE_MINUTE,
+                criticalChimeRepeatInterval = prefs[Keys.CRITICAL_CHIME_REPEAT_INTERVAL]?.let { raw ->
+                    runCatching { CriticalChimeRepeatInterval.valueOf(raw) }.getOrNull()
+                } ?: CriticalChimeRepeatInterval.FIFTEEN,
             )
         }
 
@@ -95,6 +104,10 @@ class ReminderPrefs(
         }
     }
 
+    suspend fun setCriticalChimeRepeatInterval(interval: CriticalChimeRepeatInterval) {
+        context.reminderDataStore.edit { prefs -> prefs[Keys.CRITICAL_CHIME_REPEAT_INTERVAL] = interval.name }
+    }
+
     suspend fun exportForBackup(): JSONObject {
         val prefs = context.reminderDataStore.data.first()
         return JSONObject().apply {
@@ -108,6 +121,7 @@ class ReminderPrefs(
                 Keys.CRITICAL_RING_DURATION.name,
                 prefs[Keys.CRITICAL_RING_DURATION] ?: CriticalRingDuration.ONE_MINUTE.name,
             )
+            put(Keys.CRITICAL_CHIME_REPEAT_INTERVAL.name, prefs[Keys.CRITICAL_CHIME_REPEAT_INTERVAL] ?: CriticalChimeRepeatInterval.FIFTEEN.name)
         }
     }
 
@@ -132,6 +146,11 @@ class ReminderPrefs(
                     runCatching { CriticalRingDuration.valueOf(json.getString(Keys.CRITICAL_RING_DURATION.name)) }.getOrNull()
                 if (duration != null) {
                     mutable[Keys.CRITICAL_RING_DURATION] = duration.name
+                }
+            }
+            if (json.has(Keys.CRITICAL_CHIME_REPEAT_INTERVAL.name) && !json.isNull(Keys.CRITICAL_CHIME_REPEAT_INTERVAL.name)) {
+                runCatching { CriticalChimeRepeatInterval.valueOf(json.getString(Keys.CRITICAL_CHIME_REPEAT_INTERVAL.name)) }.getOrNull()?.let {
+                    mutable[Keys.CRITICAL_CHIME_REPEAT_INTERVAL] = it.name
                 }
             }
         }
