@@ -130,13 +130,17 @@ class ReminderScheduler(
      */
     suspend fun ensureCriticalRepeat(now: Long) =
         criticalRepeatMutex.withLock {
-            setCriticalRepeatAlarm(nextCriticalRepeatAt(criticalRepeatStore.nextAt(), now))
+            val prefs = reminderPrefs?.snapshot()
+            val interval = if (prefs?.criticalRingDuration?.ringsLikeAlarm == false) {
+                prefs.criticalChimeRepeatInterval.minutes * 60_000L
+            } else CRITICAL_REPEAT_INTERVAL_MILLIS
+            setCriticalRepeatAlarm(nextCriticalRepeatAt(criticalRepeatStore.nextAt(), now, interval))
         }
 
     /** Books the tick after the one that just fired. */
-    suspend fun scheduleNextCriticalRepeat(now: Long) =
+    suspend fun scheduleNextCriticalRepeat(now: Long, intervalMillis: Long = CRITICAL_REPEAT_INTERVAL_MILLIS) =
         criticalRepeatMutex.withLock {
-            setCriticalRepeatAlarm(now + CRITICAL_REPEAT_INTERVAL_MILLIS)
+            setCriticalRepeatAlarm(now + intervalMillis)
         }
 
     /** Ends the shared repeat and any pending ring stop: no Critical note still needs either. */

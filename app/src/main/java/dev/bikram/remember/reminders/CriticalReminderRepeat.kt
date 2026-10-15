@@ -55,8 +55,9 @@ internal fun needsCriticalRepeat(
 internal fun nextCriticalRepeatAt(
     storedAt: Long?,
     now: Long,
+    intervalMillis: Long = CRITICAL_REPEAT_INTERVAL_MILLIS,
 ): Long {
-    val latest = now + CRITICAL_REPEAT_INTERVAL_MILLIS
+    val latest = now + intervalMillis
     return if (storedAt != null && storedAt in (now + 1)..latest) storedAt else latest
 }
 
@@ -147,7 +148,9 @@ class CriticalReminderRepeatReceiver : BroadcastReceiver() {
         prefs.criticalRingDuration.ringMillis?.let { ringMillis ->
             reminderScheduler.scheduleCriticalRingStop(now + ringMillis)
         }
-        reminderScheduler.scheduleNextCriticalRepeat(now)
+        val interval = if (prefs.criticalRingDuration.ringsLikeAlarm) CRITICAL_REPEAT_INTERVAL_MILLIS
+        else prefs.criticalChimeRepeatInterval.minutes * 60_000L
+        reminderScheduler.scheduleNextCriticalRepeat(now, interval)
     }
 
     /**
